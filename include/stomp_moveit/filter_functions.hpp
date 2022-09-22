@@ -16,7 +16,7 @@ FilterFn simple_smoothing_matrix(size_t num_timesteps)
   Eigen::MatrixXd smoothing_matrix;
   stomp::generateSmoothingMatrix(num_timesteps, 1.0, smoothing_matrix);
   return [=](const Eigen::MatrixXd& values, Eigen::MatrixXd& filtered_values) {
-    for (size_t i = 0; i < filtered_values.rows(); ++i)
+    for (int i = 0; i < filtered_values.rows(); ++i)
     {
       filtered_values.row(i).transpose() = smoothing_matrix * (filtered_values.row(i).transpose());
     }

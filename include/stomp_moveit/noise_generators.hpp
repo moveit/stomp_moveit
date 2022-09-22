@@ -30,7 +30,6 @@ NoiseGeneratorFn get_normal_distribution_generator(size_t num_timesteps, std::ve
 
   // creating finite difference acceleration matrix
   Eigen::MatrixXd A = Eigen::MatrixXd::Zero(num_timesteps, num_timesteps);
-  int num_elements = (int((ACC_MATRIX_DIAGONAL_INDICES.size() - 1) / 2.0) + 1) * num_timesteps;
   for (auto i = 0u; i < ACC_MATRIX_DIAGONAL_INDICES.size(); i++)
   {
     fill_diagonal(A, ACC_MATRIX_DIAGONAL_VALUES[i], ACC_MATRIX_DIAGONAL_INDICES[i]);
@@ -52,7 +51,7 @@ NoiseGeneratorFn get_normal_distribution_generator(size_t num_timesteps, std::ve
   NoiseGeneratorFn noise_generator_fn = [=](const Eigen::MatrixXd& values, Eigen::MatrixXd& noisy_values,
                                             Eigen::MatrixXd& noise) {
     static thread_local Eigen::VectorXd raw_noise(num_timesteps);
-    for (size_t i = 0; i < values.rows(); ++i)
+    for (int i = 0; i < values.rows(); ++i)
     {
       rand_generators[i]->sample(raw_noise);
       raw_noise.head(1).setZero();

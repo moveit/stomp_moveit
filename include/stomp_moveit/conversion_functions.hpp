@@ -59,9 +59,8 @@ Eigen::MatrixXd robot_trajectory_to_matrix(const robot_trajectory::RobotTrajecto
 
   Eigen::MatrixXd trajectory_values(active_joints.size(), trajectory.getWayPointCount());
 
-  for (size_t timestep = 0; timestep < trajectory_values.cols(); ++timestep)
+  for (int timestep = 0; timestep < trajectory_values.cols(); ++timestep)
   {
-    size_t joint_index = 0;
     const auto& waypoint = trajectory.getWayPoint(timestep);
     for (size_t joint_index = 0; joint_index < active_joints.size(); ++joint_index)
     {

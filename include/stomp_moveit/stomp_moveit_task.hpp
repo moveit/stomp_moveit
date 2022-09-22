@@ -12,7 +12,7 @@ using PostIterationFn = std::function<void(int iteration_number, double cost, co
 using DoneFn =
     std::function<void(bool success, int total_iterations, double final_cost, const Eigen::MatrixXd& values)>;
 
-class ComposableTask : public stomp::Task
+class ComposableTask final : public stomp::Task
 {
 public:
   ComposableTask(NoiseGeneratorFn noise_generator_fn, CostFn cost_fn, FilterFn filter_fn,

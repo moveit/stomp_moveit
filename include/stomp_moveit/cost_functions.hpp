@@ -24,7 +24,7 @@ CostFn get_collision_cost_function(const std::shared_ptr<const planning_scene::P
     std::vector<std::pair<long, long>> collision_windows;
     bool in_collision = false;
 
-    for (size_t timestep = 0; timestep < values.cols(); ++timestep)
+    for (int timestep = 0; timestep < values.cols(); ++timestep)
     {
       set_joint_positions(values.col(timestep), joints, sample_state);
       sample_state.update();
