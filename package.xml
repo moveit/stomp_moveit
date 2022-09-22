@@ -4,6 +4,7 @@
   <name>stomp_moveit</name>
   <version>0.0.1</version>
   <description>STOMP for MoveIt</description>
+  <author email="henningkayser@picknik.ai">Henning Kayser</author>
   <maintainer email="henningkayser@picknik.ai">Henning Kayser</maintainer>
   <license>BSD-3-Clause</license>
 
