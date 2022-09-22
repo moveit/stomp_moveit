@@ -1,7 +1,6 @@
 #pragma once
 
 #include <stomp/task.h>
-#include <iostream>
 
 namespace stomp_moveit
 {
