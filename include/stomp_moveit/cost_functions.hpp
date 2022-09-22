@@ -21,6 +21,8 @@ CostFn get_collision_cost_function(const std::shared_ptr<const planning_scene::P
     costs.setZero(values.cols());
 
     validity = true;
+    std::vector<std::pair<long, long>> collision_windows;
+    bool in_collision = false;
 
     for (size_t timestep = 0; timestep < values.cols(); ++timestep)
     {
@@ -31,12 +33,39 @@ CostFn get_collision_cost_function(const std::shared_ptr<const planning_scene::P
       {
         costs(timestep) = collision_penalty;
         validity = false;
-      }
 
+        if (!in_collision)
+        {
+          collision_windows.emplace_back(timestep, values.cols());
+          in_collision = true;
+        }
+      }
+      else
+      {
+        if (in_collision)
+        {
+          collision_windows.back().second = timestep - 1;
+          in_collision = false;
+        }
+      }
       // TODO: Check intermediate collisions
     }
 
-    // TODO: Apply kernel smoothing
+    // Smooth out cost of colliding segments using a gaussian
+    // The standard deviation is picked so that neighboring states
+    // before and after the collision are penalized as well.
+    for (const auto& [start, end] : collision_windows)
+    {
+      const double window_size = static_cast<double>(end - start) + 1;
+      const double sigma = window_size / 5.0;
+      const double mu = 0.5 * (start + end);
+      for (auto j = std::max(0l, start - static_cast<long>(sigma));
+           j <= std::min(values.cols() - 1, end + static_cast<long>(sigma)); ++j)
+      {
+        costs(j) +=
+            std::exp(-std::pow(j - mu, 2) / (2 * std::pow(sigma, 2))) / (sigma * std::sqrt(2 * mu)) * window_size;
+      }
+    }
 
     return true;
   };
