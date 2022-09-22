@@ -39,7 +39,7 @@ void fill_robot_trajectory(const Eigen::MatrixXd& trajectory_values, const movei
     const auto waypoint = std::make_shared<moveit::core::RobotState>(reference_state);
     set_joint_positions(trajectory_values.col(timestep), active_joints, *waypoint);
 
-    trajectory.addSuffixWayPoint(waypoint, 0.01 /* placeholder dt */);
+    trajectory.addSuffixWayPoint(waypoint, 0.1 /* placeholder dt */);
   }
 }
 
