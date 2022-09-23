@@ -12,24 +12,46 @@ find_package(moveit_core REQUIRED)
 find_package(moveit_ros REQUIRED)
 find_package(moveit_visual_tools REQUIRED)
 
-add_executable(stomp_moveit_example src/stomp_moveit_example.cpp)
-target_include_directories(stomp_moveit_example PUBLIC
+include_directories(stomp_moveit_example PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
-target_compile_features(stomp_moveit_example PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
-ament_target_dependencies(
-  stomp_moveit_example
+
+# Planner Plugin
+add_library(stomp_moveit_plugin SHARED
+  src/stomp_moveit_planner_plugin.cpp
+  src/stomp_moveit_planning_context.cpp
+)
+ament_target_dependencies(stomp_moveit_plugin
+  moveit_core
+)
+target_link_libraries(stomp_moveit_plugin stomp::stomp)
+
+pluginlib_export_plugin_description_file(moveit_core stomp_moveit_plugin_description.xml)
+
+install(TARGETS stomp_moveit_plugin
+  EXPORT ${PROJECT_NAME}Targets
+  LIBRARY DESTINATION lib
+  ARCHIVE DESTINATION lib
+  RUNTIME DESTINATION bin
+  INCLUDES DESTINATION include
+)
+
+# Demo Executable
+add_executable(stomp_moveit_example src/stomp_moveit_example.cpp)
+ament_target_dependencies(stomp_moveit_example
   moveit_core
   moveit_ros
   moveit_visual_tools
 )
-
 target_link_libraries(stomp_moveit_example stomp::stomp)
 
 install(TARGETS stomp_moveit_example
   DESTINATION lib/${PROJECT_NAME})
 
 install(DIRECTORY launch DESTINATION share/${PROJECT_NAME})
+
+ament_export_targets(${PROJECT_NAME}Targets HAS_LIBRARY_TARGET)
+ament_export_dependencies(moveit_core stomp)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
