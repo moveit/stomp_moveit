@@ -7,6 +7,8 @@
 #include <stomp_moveit/cost_functions.hpp>
 #include <stomp_moveit/stomp_moveit_task.hpp>
 
+#include <stomp_moveit_parameters.hpp>
+
 namespace stomp_moveit
 {
 bool solveWithStomp(const stomp::StompConfiguration& config, const stomp::TaskPtr& task,
@@ -76,6 +78,24 @@ stomp::TaskPtr createStompTask(const stomp::StompConfiguration& config, const St
       std::make_shared<ComposableTask>(noise_generator_fn, cost_fn, filter_fn, iteration_callback_fn, done_callback_fn);
   return task;
 }
+
+stomp::StompConfiguration getStompConfig(const stomp_moveit::Params& params, size_t num_dimensions)
+{
+  stomp::StompConfiguration config;
+  config.num_dimensions = num_dimensions;                                                 // Copied from joint count
+  config.initialization_method = stomp::TrajectoryInitializations::LINEAR_INTERPOLATION;  // TODO: set from request
+  config.num_iterations = params.num_iterations;
+  config.num_iterations_after_valid = params.num_iterations_after_valid;
+  config.num_timesteps = params.num_timesteps;
+  config.delta_t = params.delta_t;
+  config.exponentiated_cost_sensitivity = params.exponentiated_cost_sensitivity;
+  config.num_rollouts = params.num_rollouts;
+  config.max_rollouts = params.max_rollouts;
+  config.control_cost_weight = params.control_cost_weight;
+
+  return config;
+}
+
 stomp::StompConfiguration loadStompConfig(size_t num_dimensions)
 {
   stomp::StompConfiguration config;
@@ -103,6 +123,12 @@ stomp::StompConfiguration loadStompConfig(size_t num_dimensions)
   return config;
 }
 
+StompPlanningContext::StompPlanningContext(const std::string& name, const std::string& group,
+                                           const stomp_moveit::Params& params)
+  : planning_interface::PlanningContext(name, group), params_(params)
+{
+}
+
 bool StompPlanningContext::solve(planning_interface::MotionPlanResponse& res)
 {
   // Start time
@@ -126,7 +152,7 @@ bool StompPlanningContext::solve(planning_interface::MotionPlanResponse& res)
 
   // STOMP config and task
   const auto group = getPlanningScene()->getRobotModel()->getJointModelGroup(getGroupName());
-  const auto config = loadStompConfig(group->getActiveJointModels().size() /* num_dimensions */);
+  const auto config = getStompConfig(params_, group->getActiveJointModels().size() /* num_dimensions */);
   const auto task = createStompTask(config, *this);
 
   // Solve motion plan
