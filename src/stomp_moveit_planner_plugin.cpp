@@ -62,9 +62,7 @@ public:
 
   bool canServiceRequest(const MotionPlanRequest& req) const override
   {
-    // TODO: check full request
-    // Check requirements
-    if (req.goal_constraints.size() != 1 || req.goal_constraints.at(0).joint_constraints.empty())
+    if (req.goal_constraints.empty())
     {
       RCLCPP_ERROR(LOGGER, "Invalid goal constraints");
       return false;
@@ -74,12 +72,6 @@ public:
     {
       RCLCPP_ERROR(LOGGER, "Invalid joint group '%s'", req.group_name.c_str());
       return false;
-    }
-
-    const auto& gc = req.goal_constraints.at(0);
-    if (!(gc.position_constraints.empty() && gc.orientation_constraints.empty() && gc.visibility_constraints.empty()))
-    {
-      RCLCPP_WARN(LOGGER, "Ignoring position, orientation or visibility goal constraints - not implemented!");
     }
 
     const auto& pc = req.path_constraints;

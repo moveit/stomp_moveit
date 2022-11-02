@@ -9,6 +9,8 @@
 
 #include <stomp_moveit_parameters.hpp>
 
+#include <moveit/constraint_samplers/constraint_sampler_manager.h>
+
 namespace stomp_moveit
 {
 bool solveWithStomp(const stomp::StompConfiguration& config, const stomp::TaskPtr& task,
@@ -27,31 +29,6 @@ bool solveWithStomp(const stomp::StompConfiguration& config, const stomp::TaskPt
   }
 
   return success;
-}
-
-bool extractGoalState(const moveit_msgs::msg::Constraints& goal_constraints, moveit::core::RobotState& goal_state)
-{
-  // NOTE: only joint constraints are implemented, canServiceRequest() warns about this
-  // joint constraints must be set
-  if (goal_constraints.joint_constraints.empty())
-  {
-    return false;
-  }
-
-  // copying goal values into state
-  for (const auto& jc : goal_constraints.joint_constraints)
-  {
-    goal_state.setVariablePosition(jc.joint_name, jc.position);
-  }
-
-  // check bounds
-  if (!goal_state.satisfiesBounds())
-  {
-    // ROS_ERROR("%s Requested Goal joint pose is out of bounds",getName().c_str());
-    return false;
-  }
-
-  return true;
 }
 
 stomp::TaskPtr createStompTask(const stomp::StompConfiguration& config, const StompPlanningContext& context)
@@ -117,7 +94,9 @@ bool StompPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   const auto& req = getMotionPlanRequest();
   const moveit::core::RobotState start_state(*getPlanningScene()->getCurrentStateUpdated(req.start_state));
   moveit::core::RobotState goal_state(start_state);
-  if (!extractGoalState(req.goal_constraints.at(0), goal_state))
+  constraint_samplers::ConstraintSamplerManager sampler_manager;
+  auto goal_sampler = sampler_manager.selectSampler(getPlanningScene(), getGroupName(), req.goal_constraints.at(0));
+  if (!goal_sampler || !goal_sampler->sample(goal_state))
   {
     result_code = moveit_msgs::msg::MoveItErrorCodes::INVALID_GOAL_CONSTRAINTS;
     return false;  // Can't plan without valid goal state
