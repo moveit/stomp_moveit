@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.8)
+cmake_minimum_required(VERSION 3.22)
 project(stomp_moveit)
 
-if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_compile_options(-Wall -Wextra -Wpedantic -Wno-unused-parameter)
-endif()
+# Common cmake code applied to all moveit packages
+find_package(moveit_common REQUIRED)
+moveit_package()
 
 # find dependencies
 find_package(ament_cmake REQUIRED)
@@ -15,7 +15,7 @@ find_package(generate_parameter_library REQUIRED)
 
 generate_parameter_library(stomp_moveit_parameters res/stomp_moveit.yaml)
 
-include_directories(stomp_moveit_example PUBLIC
+include_directories(stomp_moveit PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 
