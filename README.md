@@ -1,6 +1,6 @@
 # stomp_moveit
 
-> Note: This package is WIP and not feature complete!
+> Note: This package is WIP and not feature complete! See [Open TODOs](https://github.com/ros-planning/stomp_moveit/issues/1) for more info.
 
 STOMP Planner plugin for MoveIt ROS 2.
 
@@ -15,7 +15,7 @@ vcs import < stomp_moveit/stomp_moveit.repos
 rosdep install --from-paths . --ignore-src --rosdistro $ROS_DISTRO
 ```
 
-Compile your and source yourworkspace
+Compile and source your workspace:
 
 ```
 cd $COLCON_WS
@@ -26,7 +26,7 @@ source install/setup.bash
 ## Setup
 
 Configure a STOMP planning pipeline by adding a pipeline entry "stomp" to your MoveIt config [here](https://github.com/ros-planning/moveit_resources/blob/ros2/panda_moveit_config/launch/demo.launch.py#L28).
-Add a `stomp_planning.yaml` to your config path with the following content:
+Add a `stomp_planning.yaml` like below to your config path:
 
 ```
 planning_plugin: stomp_moveit/StompPlanner
@@ -38,4 +38,5 @@ request_adapters: >-
   default_planner_request_adapters/FixStartStatePathConstraints
 ```
 
-With this you should now be able to select STOMP as your planning pipeline using the RViZ MotionPlanningPannel or your API of choice.
+With this you should now be able to select STOMP as your planning pipeline using the RViZ MotionPlanningPanel or your application.
+Alternatively, you can run the demo node using `ros2 launch stomp_moveit stomp_moveit_example.launch.py`.
