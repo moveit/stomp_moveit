@@ -1,3 +1,6 @@
+#include <atomic>
+#include <future>
+
 #include <stomp/stomp.h>
 
 #include <stomp_moveit/stomp_moveit_planning_context.hpp>
@@ -100,16 +103,29 @@ bool StompPlanningContext::solve(planning_interface::MotionPlanResponse& res)
     return false;  // Can't plan without valid goal state
   }
 
-  // STOMP config and task
+  // STOMP config, task, planner instance
   const auto group = getPlanningScene()->getRobotModel()->getJointModelGroup(getGroupName());
   const auto config = getStompConfig(params_, group->getActiveJointModels().size() /* num_dimensions */);
   const auto task = createStompTask(config, *this);
-
-  // Solve motion plan with STOMP
   stomp_ = std::make_shared<stomp::Stomp>(config, task);
+
+  // Timeout async task
+  auto timeout_future = std::async(std::launch::async, [&, stomp = stomp_]() {
+    std::this_thread::sleep_for(std::chrono::duration<double>(req.allowed_planning_time));
+    if (stomp)
+    {
+      stomp->cancel();
+    }
+  });
+
+  // Solve
   if (!solveWithStomp(stomp_, start_state, goal_state, group, trajectory))
   {
-    result_code = moveit_msgs::msg::MoveItErrorCodes::PLANNING_FAILED;
+    // We timed out if the timeout task has completed so that the timeout future is valid and ready
+    bool timed_out =
+        timeout_future.valid() && timeout_future.wait_for(std::chrono::nanoseconds(1)) == std::future_status::ready;
+    result_code =
+        timed_out ? moveit_msgs::msg::MoveItErrorCodes::TIMED_OUT : moveit_msgs::msg::MoveItErrorCodes::PLANNING_FAILED;
   }
   stomp_.reset();
 
