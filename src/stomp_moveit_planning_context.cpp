@@ -109,10 +109,13 @@ bool StompPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   const auto task = createStompTask(config, *this);
   stomp_ = std::make_shared<stomp::Stomp>(config, task);
 
-  // Timeout async task
+  std::condition_variable cv;
+  std::mutex cv_mutex;
+  bool finished;
   auto timeout_future = std::async(std::launch::async, [&, stomp = stomp_]() {
-    std::this_thread::sleep_for(std::chrono::duration<double>(req.allowed_planning_time));
-    if (stomp)
+    std::unique_lock<std::mutex> lock(cv_mutex);
+    cv.wait_for(lock, std::chrono::duration<double>(req.allowed_planning_time), [&finished]{return finished;});
+    if (stomp_ == stomp)
     {
       stomp->cancel();
     }
@@ -128,7 +131,12 @@ bool StompPlanningContext::solve(planning_interface::MotionPlanResponse& res)
         timed_out ? moveit_msgs::msg::MoveItErrorCodes::TIMED_OUT : moveit_msgs::msg::MoveItErrorCodes::PLANNING_FAILED;
   }
   stomp_.reset();
-
+  {
+    std::unique_lock<std::mutex> lock(cv_mutex);
+    finished = true;
+    cv.notify_all();
+  }
+  
   // Stop time
   std::chrono::duration<double> elapsed_seconds = std::chrono::steady_clock::now() - time_start;
   planning_time = elapsed_seconds.count();
