@@ -1,12 +1,4 @@
 repositories:
-  stomp:
-    type: git
-    url: https://github.com/ros-industrial/stomp
-    version: main
-  ros_industrial_cmake_boilerplate:
-    type: git
-    url: https://github.com/ros-industrial/ros_industrial_cmake_boilerplate
-    version: master
   moveit_visual_tools:
     type: git
     url: https://github.com/ros-planning/moveit_visual_tools
