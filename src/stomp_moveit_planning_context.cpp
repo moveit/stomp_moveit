@@ -114,7 +114,7 @@ bool StompPlanningContext::solve(planning_interface::MotionPlanResponse& res)
   bool finished;
   auto timeout_future = std::async(std::launch::async, [&, stomp = stomp_]() {
     std::unique_lock<std::mutex> lock(cv_mutex);
-    cv.wait_for(lock, std::chrono::duration<double>(req.allowed_planning_time), [&finished]{return finished;});
+    cv.wait_for(lock, std::chrono::duration<double>(req.allowed_planning_time), [&finished] { return finished; });
     if (stomp_ == stomp)
     {
       stomp->cancel();
@@ -136,7 +136,7 @@ bool StompPlanningContext::solve(planning_interface::MotionPlanResponse& res)
     finished = true;
     cv.notify_all();
   }
-  
+
   // Stop time
   std::chrono::duration<double> elapsed_seconds = std::chrono::steady_clock::now() - time_start;
   planning_time = elapsed_seconds.count();
