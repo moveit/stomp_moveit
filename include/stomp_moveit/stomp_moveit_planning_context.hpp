@@ -28,8 +28,5 @@ public:
 private:
   const stomp_moveit::Params params_;
   std::shared_ptr<stomp::Stomp> stomp_;
-
-  bool extractSeedTrajectory(const planning_interface::MotionPlanRequest &req,
-                             robot_trajectory::RobotTrajectoryPtr &seed) const;
 };
 }  // namespace stomp_moveit

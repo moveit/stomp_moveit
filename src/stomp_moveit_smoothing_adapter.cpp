@@ -104,8 +104,8 @@ public:
 
     // Solve
     RCLCPP_INFO(rclcpp::get_logger("stomp_moveit"), "Smoothing result trajectory with STOMP");
-//    planning_interface::MotionPlanDetailedResponse stomp_res;
-//    bool success = planning_context->solve(stomp_res);
+    //    planning_interface::MotionPlanDetailedResponse stomp_res;
+    //    bool success = planning_context->solve(stomp_res);
     planning_interface::MotionPlanResponse stomp_res;
     bool success = planning_context->solve(stomp_res);
     if (success)
