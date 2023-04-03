@@ -10,8 +10,15 @@ namespace stomp_moveit
 {
 namespace filters
 {
+// \brief An empty placeholder filter that doesn't apply any updates to the trajectory.
 const static FilterFn NoFilter = [](const Eigen::MatrixXd& values, Eigen::MatrixXd& filtered_values) { return true; };
 
+/**
+ * Creates a filter function that applies Stomp's smoothing matrix for the whole trajectory.
+ *
+ * @param num_timesteps The number of trajectory waypoints configured for STOMP
+ * @return The smoothing filter function to be used for the STOMP task
+ */
 FilterFn simple_smoothing_matrix(size_t num_timesteps)
 {
   Eigen::MatrixXd smoothing_matrix;
@@ -24,6 +31,13 @@ FilterFn simple_smoothing_matrix(size_t num_timesteps)
     return true;
   };
 }
+
+/**
+ * Creates a filter function that clips all waypoint positions using the joint bounds of a given JointModelGroup.
+ *
+ * @param group The JointModelGroup providing the joint limits
+ * @return The filter function for enforcing joint limits
+ */
 FilterFn enforce_position_bounds(const moveit::core::JointModelGroup* group)
 {
   return [=](const Eigen::MatrixXd& values, Eigen::MatrixXd& filtered_values) {
@@ -39,6 +53,13 @@ FilterFn enforce_position_bounds(const moveit::core::JointModelGroup* group)
     return true;
   };
 }
+
+/**
+ * Helper function for applying multiple trajectory update filters in sequential order.
+ *
+ * @param filter_functions The ordered vector of filter functions to apply
+ * @return The filter function applying all the configured filters in sequence
+ */
 FilterFn chain(const std::vector<FilterFn>& filter_functions)
 {
   return [=](const Eigen::MatrixXd& values, Eigen::MatrixXd& filtered_values) {
