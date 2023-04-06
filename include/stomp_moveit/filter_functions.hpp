@@ -11,7 +11,7 @@ namespace stomp_moveit
 namespace filters
 {
 // \brief An empty placeholder filter that doesn't apply any updates to the trajectory.
-const static FilterFn NoFilter = [](const Eigen::MatrixXd& values, Eigen::MatrixXd& filtered_values) { return true; };
+const static FilterFn NoFilter = [](const Eigen::MatrixXd& /*values*/, Eigen::MatrixXd& /*filtered_values*/) { return true; };
 
 /**
  * Creates a filter function that applies Stomp's smoothing matrix for the whole trajectory.
@@ -23,7 +23,7 @@ FilterFn simple_smoothing_matrix(size_t num_timesteps)
 {
   Eigen::MatrixXd smoothing_matrix;
   stomp::generateSmoothingMatrix(num_timesteps, 1.0, smoothing_matrix);
-  return [=](const Eigen::MatrixXd& values, Eigen::MatrixXd& filtered_values) {
+  return [=](const Eigen::MatrixXd& /*values*/, Eigen::MatrixXd& filtered_values) {
     for (int i = 0; i < filtered_values.rows(); ++i)
     {
       filtered_values.row(i).transpose() = smoothing_matrix * (filtered_values.row(i).transpose());
