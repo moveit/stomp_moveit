@@ -30,9 +30,9 @@ const auto GREEN = []() {
 const auto TRANSLUCENT_LIGHT = []() {
   std_msgs::msg::ColorRGBA color;
   color.r = 0.1;
-  color.g = 0.1;
+  color.g = 0.8;
   color.b = 0.1;
-  color.a = 0.1;
+  color.a = 0.5;
   return color;
 }();
 }  // namespace
@@ -44,13 +44,11 @@ bool publishTrajectoryPoints(const robot_trajectory::RobotTrajectory& robot_traj
 {
   // Create Sphere Marker
   visualization_msgs::msg::Marker sphere_marker;
-  sphere_marker.header.frame_id = "world";
-  sphere_marker.ns = "stomp";
+  sphere_marker.header.frame_id = "panda_link0";
+  sphere_marker.ns = "Path";
   sphere_marker.type = visualization_msgs::msg::Marker::SPHERE;
   sphere_marker.action = visualization_msgs::msg::Marker::ADD;
   sphere_marker.lifetime = rclcpp::Duration(0, 0);  // Infinite lifetime
-  sphere_marker.points.resize(1);
-  sphere_marker.colors.resize(1);
   sphere_marker.scale.x = 0.01;
   sphere_marker.scale.y = 0.01;
   sphere_marker.scale.z = 0.01;
@@ -87,8 +85,7 @@ bool publishTrajectoryPoints(const robot_trajectory::RobotTrajectory& robot_traj
 
     // Create a sphere point
     // Add the point pair to the line message
-    sphere_marker.points.resize(1);
-    sphere_marker.colors.back() = color;
+    sphere_marker.color = color;
 
     sphere_marker.id = index;
 
@@ -100,8 +97,6 @@ bool publishTrajectoryPoints(const robot_trajectory::RobotTrajectory& robot_traj
     return false;
   }
 
-  //RCLCPP_ERROR_STREAM(LOGGER, "get_subscription_count: " << marker_publisher->get_subscription_count()
-  //                                                       << " # of markers: " << markers_array.markers.size());
   marker_publisher->publish(markers_array);
   return true;
 }
