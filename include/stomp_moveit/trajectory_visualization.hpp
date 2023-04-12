@@ -18,29 +18,20 @@ namespace visualization
 namespace
 {
 const rclcpp::Logger LOGGER = rclcpp::get_logger("stomp_moveit");
-const auto GREEN = []() {
+const auto GREEN = [](const double& a) {
   std_msgs::msg::ColorRGBA color;
   color.r = 0.1;
   color.g = 0.8;
   color.b = 0.1;
-  color.a = 1.0;
+  color.a = a;
   return color;
-}();
-
-const auto TRANSLUCENT_LIGHT = []() {
-  std_msgs::msg::ColorRGBA color;
-  color.r = 0.1;
-  color.g = 0.8;
-  color.b = 0.1;
-  color.a = 0.5;
-  return color;
-}();
+};
 }  // namespace
 
 bool publishTrajectoryPoints(const robot_trajectory::RobotTrajectory& robot_trajectory,
                              const moveit::core::LinkModel* ee_parent_link,
                              rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher,
-                             const std_msgs::msg::ColorRGBA& color = GREEN)
+                             const std_msgs::msg::ColorRGBA& color = GREEN(1.0))
 {
   // Create Sphere Marker
   visualization_msgs::msg::Marker sphere_marker;
@@ -127,7 +118,7 @@ get_iteration_path_publisher(rclcpp::Publisher<visualization_msgs::msg::MarkerAr
     // For each end effector
     for (const moveit::core::LinkModel* ee_parent_link : tips)
     {
-      publishTrajectoryPoints(trajectory, ee_parent_link, marker_publisher, TRANSLUCENT_LIGHT);
+      publishTrajectoryPoints(trajectory, ee_parent_link, marker_publisher, GREEN(0.5));
     }
   };
 
