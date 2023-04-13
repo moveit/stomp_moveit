@@ -43,41 +43,15 @@ bool publishTrajectoryPoints(const robot_trajectory::RobotTrajectory& robot_traj
   sphere_marker.scale.x = 0.01;
   sphere_marker.scale.y = 0.01;
   sphere_marker.scale.z = 0.01;
+  sphere_marker.color = color;
   sphere_marker.frame_locked = false;
 
   visualization_msgs::msg::MarkerArray markers_array;
-  // Visualize end effector position of cartesian path
+  // Visualize end effector positions of cartesian path
   for (std::size_t index = 0; index < robot_trajectory.getWayPointCount(); index++)
   {
     const Eigen::Isometry3d& tip_pose = robot_trajectory.getWayPoint(index).getGlobalLinkTransform(ee_parent_link);
     sphere_marker.pose = tf2::toMsg(tip_pose);
-
-    // Normalize pose
-    double norm = 0;
-    norm += sphere_marker.pose.orientation.w * sphere_marker.pose.orientation.w;
-    norm += sphere_marker.pose.orientation.x * sphere_marker.pose.orientation.x;
-    norm += sphere_marker.pose.orientation.y * sphere_marker.pose.orientation.y;
-    norm += sphere_marker.pose.orientation.z * sphere_marker.pose.orientation.z;
-    norm = std::sqrt(norm);
-    if (norm < std::numeric_limits<double>::epsilon())
-    {
-      sphere_marker.pose.orientation.w = 1;
-      sphere_marker.pose.orientation.x = 0;
-      sphere_marker.pose.orientation.y = 0;
-      sphere_marker.pose.orientation.z = 0;
-    }
-    else
-    {
-      sphere_marker.pose.orientation.w = sphere_marker.pose.orientation.w / norm;
-      sphere_marker.pose.orientation.x = sphere_marker.pose.orientation.x / norm;
-      sphere_marker.pose.orientation.y = sphere_marker.pose.orientation.y / norm;
-      sphere_marker.pose.orientation.z = sphere_marker.pose.orientation.z / norm;
-    }
-
-    // Create a sphere point
-    // Add the point pair to the line message
-    sphere_marker.color = color;
-
     sphere_marker.id = index;
 
     markers_array.markers.push_back(sphere_marker);
@@ -109,14 +83,9 @@ get_iteration_path_publisher(rclcpp::Publisher<visualization_msgs::msg::MarkerAr
     static thread_local robot_trajectory::RobotTrajectory trajectory(planning_scene_monitor->getRobotModel(), group);
     fill_robot_trajectory(values, *reference_state, trajectory);
 
-    std::vector<const moveit::core::LinkModel*> tips;
-    if (!group->getEndEffectorTips(tips))
-    {
-      RCLCPP_ERROR_STREAM(LOGGER, "Unable to get end effector tips from jmg");
-    }
+    const moveit::core::LinkModel* ee_parent_link = group->getOnlyOneEndEffectorTip();
 
-    // For each end effector
-    for (const moveit::core::LinkModel* ee_parent_link : tips)
+    if (ee_parent_link != nullptr)
     {
       publishTrajectoryPoints(trajectory, ee_parent_link, marker_publisher, GREEN(0.5));
     }
@@ -145,14 +114,9 @@ get_success_trajectory_publisher(rclcpp::Publisher<visualization_msgs::msg::Mark
     {
       fill_robot_trajectory(values, *reference_state, trajectory);
 
-      std::vector<const moveit::core::LinkModel*> tips;
-      if (!group->getEndEffectorTips(tips))
-      {
-        RCLCPP_ERROR_STREAM(LOGGER, "Unable to get end effector tips from jmg");
-      }
+      const moveit::core::LinkModel* ee_parent_link = group->getOnlyOneEndEffectorTip();
 
-      // For each end effector
-      for (const moveit::core::LinkModel* ee_parent_link : tips)
+      if (ee_parent_link != nullptr)
       {
         publishTrajectoryPoints(trajectory, ee_parent_link, marker_publisher);
       }
