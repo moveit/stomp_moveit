@@ -35,7 +35,7 @@ bool publishTrajectoryPoints(const robot_trajectory::RobotTrajectory& robot_traj
 {
   // Create Sphere Marker
   visualization_msgs::msg::Marker sphere_marker;
-  sphere_marker.header.frame_id = "panda_link0";
+  sphere_marker.header.frame_id = robot_trajectory.getRobotModel()->getModelFrame();
   sphere_marker.ns = "Path";
   sphere_marker.type = visualization_msgs::msg::Marker::SPHERE;
   sphere_marker.action = visualization_msgs::msg::Marker::ADD;
