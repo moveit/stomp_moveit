@@ -33,7 +33,10 @@ bool publishTrajectoryPoints(const robot_trajectory::RobotTrajectory& robot_traj
                              rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher,
                              const std_msgs::msg::ColorRGBA& color = GREEN(1.0))
 {
-  // Create Sphere Marker
+  if (robot_trajectory.empty())
+    return false;
+
+  // Initialize Sphere Marker
   visualization_msgs::msg::Marker sphere_marker;
   sphere_marker.header.frame_id = robot_trajectory.getRobotModel()->getModelFrame();
   sphere_marker.ns = "Path";
@@ -46,8 +49,8 @@ bool publishTrajectoryPoints(const robot_trajectory::RobotTrajectory& robot_traj
   sphere_marker.color = color;
   sphere_marker.frame_locked = false;
 
+  // Visualize end effector positions of Cartesian path as sphere markers
   visualization_msgs::msg::MarkerArray markers_array;
-  // Visualize end effector positions of cartesian path
   for (std::size_t index = 0; index < robot_trajectory.getWayPointCount(); index++)
   {
     const Eigen::Isometry3d& tip_pose = robot_trajectory.getWayPoint(index).getGlobalLinkTransform(ee_parent_link);
@@ -55,11 +58,6 @@ bool publishTrajectoryPoints(const robot_trajectory::RobotTrajectory& robot_traj
     sphere_marker.id = index;
 
     markers_array.markers.push_back(sphere_marker);
-  }
-
-  if (markers_array.markers.empty())
-  {
-    return false;
   }
 
   marker_publisher->publish(markers_array);
