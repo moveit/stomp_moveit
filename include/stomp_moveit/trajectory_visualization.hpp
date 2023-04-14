@@ -75,8 +75,8 @@ get_iteration_path_publisher(rclcpp::Publisher<visualization_msgs::msg::MarkerAr
 
   auto path_publisher = [marker_publisher, group, reference_state = moveit::core::RobotState(scene->getCurrentState())](
                             int /*iteration_number*/, double /*cost*/, const Eigen::MatrixXd& values) {
-    static thread_local robot_trajectory::RobotTrajectory trajectory(planning_scene_monitor->getRobotModel(), group);
-    fill_robot_trajectory(values, *reference_state, trajectory);
+    static thread_local robot_trajectory::RobotTrajectory trajectory(reference_state.getRobotModel(), group);
+    fill_robot_trajectory(values, reference_state, trajectory);
 
     const moveit::core::LinkModel* ee_parent_link = group->getOnlyOneEndEffectorTip();
 
@@ -101,10 +101,10 @@ get_success_trajectory_publisher(rclcpp::Publisher<visualization_msgs::msg::Mark
   auto path_publisher = [marker_publisher, group, reference_state = moveit::core::RobotState(scene->getCurrentState())](
                             bool success, int /*total_iterations*/, double /*final_cost*/,
                             const Eigen::MatrixXd& values) {
-    static thread_local robot_trajectory::RobotTrajectory trajectory(reference_state->getRobotModel(), group);
+    static thread_local robot_trajectory::RobotTrajectory trajectory(reference_state.getRobotModel(), group);
     if (success)
     {
-      fill_robot_trajectory(values, *reference_state, trajectory);
+      fill_robot_trajectory(values, reference_state, trajectory);
 
       const moveit::core::LinkModel* ee_parent_link = group->getOnlyOneEndEffectorTip();
 
