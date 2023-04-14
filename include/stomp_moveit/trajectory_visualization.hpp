@@ -71,13 +71,10 @@ get_iteration_path_publisher(rclcpp::Publisher<visualization_msgs::msg::MarkerAr
 {
   assert(group != nullptr);
 
-  std::shared_ptr<const moveit::core::RobotState> reference_state;
-  {
-    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor);
-    reference_state = std::make_shared<moveit::core::RobotState>(scene->getCurrentState());
-  }
+  planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor);
 
-  PostIterationFn path_publisher = [=](int /*iteration_number*/, double /*cost*/, const Eigen::MatrixXd& values) {
+  auto path_publisher = [this, group, reference_state = moveit::core::RobotState(scene->getCurrentState())](
+                            int /*iteration_number*/, double /*cost*/, const Eigen::MatrixXd& values) {
     static thread_local robot_trajectory::RobotTrajectory trajectory(planning_scene_monitor->getRobotModel(), group);
     fill_robot_trajectory(values, *reference_state, trajectory);
 
@@ -99,14 +96,11 @@ get_success_trajectory_publisher(rclcpp::Publisher<visualization_msgs::msg::Mark
 {
   assert(group != nullptr);
 
-  std::shared_ptr<const moveit::core::RobotState> reference_state;
-  {
-    planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor);
-    reference_state = std::make_shared<moveit::core::RobotState>(scene->getCurrentState());
-  }
+  planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor);
 
-  DoneFn path_publisher = [=](bool success, int /*total_iterations*/, double /*final_cost*/,
-                              const Eigen::MatrixXd& values) {
+  auto path_publisher = [this, group, reference_state = moveit::core::RobotState(scene->getCurrentState())](
+                            bool success, int /*total_iterations*/, double /*final_cost*/,
+                            const Eigen::MatrixXd& values) {
     static thread_local robot_trajectory::RobotTrajectory trajectory(reference_state->getRobotModel(), group);
     if (success)
     {
