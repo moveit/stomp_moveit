@@ -17,7 +17,6 @@ namespace visualization
 
 namespace
 {
-const rclcpp::Logger LOGGER = rclcpp::get_logger("stomp_moveit");
 const auto GREEN = [](const double& a) {
   std_msgs::msg::ColorRGBA color;
   color.r = 0.1;
@@ -26,15 +25,12 @@ const auto GREEN = [](const double& a) {
   color.a = a;
   return color;
 };
-}  // namespace
-
-bool publishTrajectoryPoints(const robot_trajectory::RobotTrajectory& robot_trajectory,
-                             const moveit::core::LinkModel* ee_parent_link,
-                             rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher,
-                             const std_msgs::msg::ColorRGBA& color = GREEN(1.0))
+visualization_msgs::msg::MarkerArray
+createTrajectoryMarkerArray(const robot_trajectory::RobotTrajectory& robot_trajectory,
+                            const moveit::core::LinkModel* ee_parent_link,
+                            const std_msgs::msg::ColorRGBA& color = GREEN(1.0))
 {
-  if (robot_trajectory.empty())
-    return false;
+  visualization_msgs::msg::MarkerArray markers_array;
 
   // Initialize Sphere Marker
   visualization_msgs::msg::Marker sphere_marker;
@@ -50,7 +46,6 @@ bool publishTrajectoryPoints(const robot_trajectory::RobotTrajectory& robot_traj
   sphere_marker.frame_locked = false;
 
   // Visualize end effector positions of Cartesian path as sphere markers
-  visualization_msgs::msg::MarkerArray markers_array;
   for (std::size_t index = 0; index < robot_trajectory.getWayPointCount(); index++)
   {
     const Eigen::Isometry3d& tip_pose = robot_trajectory.getWayPoint(index).getGlobalLinkTransform(ee_parent_link);
@@ -60,9 +55,9 @@ bool publishTrajectoryPoints(const robot_trajectory::RobotTrajectory& robot_traj
     markers_array.markers.push_back(sphere_marker);
   }
 
-  marker_publisher->publish(markers_array);
-  return true;
+  return markers_array;
 }
+}  // namespace
 
 PostIterationFn
 get_iteration_path_publisher(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher,
@@ -80,9 +75,9 @@ get_iteration_path_publisher(rclcpp::Publisher<visualization_msgs::msg::MarkerAr
 
     const moveit::core::LinkModel* ee_parent_link = group->getOnlyOneEndEffectorTip();
 
-    if (ee_parent_link != nullptr)
+    if (ee_parent_link != nullptr && !trajectory.empty())
     {
-      publishTrajectoryPoints(trajectory, ee_parent_link, marker_publisher, GREEN(0.5));
+      marker_publisher->publish(createTrajectoryMarkerArray(trajectory, ee_parent_link, GREEN(0.5)));
     }
   };
 
@@ -110,7 +105,7 @@ get_success_trajectory_publisher(rclcpp::Publisher<visualization_msgs::msg::Mark
 
       if (ee_parent_link != nullptr)
       {
-        publishTrajectoryPoints(trajectory, ee_parent_link, marker_publisher);
+        marker_publisher->publish(createTrajectoryMarkerArray(trajectory, ee_parent_link));
       }
     }
   };
