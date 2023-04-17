@@ -1,10 +1,10 @@
 #pragma once
 
-#include <moveit_visual_tools/moveit_visual_tools.h>
-
 #include <stomp_moveit/stomp_moveit_task.hpp>
 #include <stomp_moveit/conversion_functions.hpp>
 
+#include <moveit/planning_scene/planning_scene.h>
+#include <moveit/robot_model/robot_model.h>
 #include <std_msgs/msg/color_rgba.hpp>
 #include <tf2_eigen/tf2_eigen.hpp>
 #include <visualization_msgs/msg/marker.hpp>
@@ -17,6 +17,7 @@ namespace visualization
 
 namespace
 {
+const rclcpp::Logger LOGGER = rclcpp::get_logger("stomp_moveit");
 const auto GREEN = [](const double& a) {
   std_msgs::msg::ColorRGBA color;
   color.r = 0.1;
@@ -61,14 +62,20 @@ createTrajectoryMarkerArray(const robot_trajectory::RobotTrajectory& robot_traje
 
 PostIterationFn
 get_iteration_path_publisher(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher,
-                             planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
+                             std::shared_ptr<const planning_scene::PlanningScene> planning_scene,
                              const moveit::core::JointModelGroup* group)
 {
   assert(group != nullptr);
 
-  planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor);
+  if (marker_publisher == nullptr)
+  {
+    return [](int /*iteration_number*/, double /*cost*/, const Eigen::MatrixXd& /*values*/) {
+      // Do nothing
+    };
+  }
 
-  auto path_publisher = [marker_publisher, group, reference_state = moveit::core::RobotState(scene->getCurrentState())](
+  auto path_publisher = [marker_publisher, group,
+                         reference_state = moveit::core::RobotState(planning_scene->getCurrentState())](
                             int /*iteration_number*/, double /*cost*/, const Eigen::MatrixXd& values) {
     static thread_local robot_trajectory::RobotTrajectory trajectory(reference_state.getRobotModel(), group);
     fill_robot_trajectory(values, reference_state, trajectory);
@@ -77,6 +84,7 @@ get_iteration_path_publisher(rclcpp::Publisher<visualization_msgs::msg::MarkerAr
 
     if (ee_parent_link != nullptr && !trajectory.empty())
     {
+      RCLCPP_INFO(LOGGER, "PUBLISH!!!!!!!!!");
       marker_publisher->publish(createTrajectoryMarkerArray(trajectory, ee_parent_link, GREEN(0.5)));
     }
   };
@@ -86,29 +94,35 @@ get_iteration_path_publisher(rclcpp::Publisher<visualization_msgs::msg::MarkerAr
 
 DoneFn
 get_success_trajectory_publisher(rclcpp::Publisher<visualization_msgs::msg::MarkerArray>::SharedPtr marker_publisher,
-                                 planning_scene_monitor::PlanningSceneMonitorPtr planning_scene_monitor,
+                                 std::shared_ptr<const planning_scene::PlanningScene> planning_scene,
                                  const moveit::core::JointModelGroup* group)
 {
   assert(group != nullptr);
 
-  planning_scene_monitor::LockedPlanningSceneRO scene(planning_scene_monitor);
+  if (marker_publisher == nullptr)
+  {
+    return [](bool /*success*/, int /*total_iterations*/, double /*final_cost*/, const Eigen::MatrixXd& /*values*/) {
+      // Do nothing
+    };
+  }
 
-  auto path_publisher = [marker_publisher, group, reference_state = moveit::core::RobotState(scene->getCurrentState())](
-                            bool success, int /*total_iterations*/, double /*final_cost*/,
-                            const Eigen::MatrixXd& values) {
-    static thread_local robot_trajectory::RobotTrajectory trajectory(reference_state.getRobotModel(), group);
-    if (success)
-    {
-      fill_robot_trajectory(values, reference_state, trajectory);
+  auto path_publisher =
+      [marker_publisher, group, reference_state = moveit::core::RobotState(planning_scene->getCurrentState())](
+          bool success, int /*total_iterations*/, double /*final_cost*/, const Eigen::MatrixXd& values) {
+        static thread_local robot_trajectory::RobotTrajectory trajectory(reference_state.getRobotModel(), group);
+        if (success)
+        {
+          fill_robot_trajectory(values, reference_state, trajectory);
 
-      const moveit::core::LinkModel* ee_parent_link = group->getOnlyOneEndEffectorTip();
+          const moveit::core::LinkModel* ee_parent_link = group->getOnlyOneEndEffectorTip();
 
-      if (ee_parent_link != nullptr && !trajectory.empty())
-      {
-        marker_publisher->publish(createTrajectoryMarkerArray(trajectory, ee_parent_link));
-      }
-    }
-  };
+          if (ee_parent_link != nullptr && !trajectory.empty())
+          {
+            RCLCPP_INFO(LOGGER, "PUBLISH!!!!!!!!!");
+            marker_publisher->publish(createTrajectoryMarkerArray(trajectory, ee_parent_link));
+          }
+        }
+      };
 
   return path_publisher;
 }

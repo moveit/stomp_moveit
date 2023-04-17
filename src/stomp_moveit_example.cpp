@@ -8,9 +8,10 @@
 #include <stomp_moveit/cost_functions.hpp>
 #include <stomp_moveit/stomp_moveit_task.hpp>
 
-// MoveItCpp
+// MoveIt
 #include <moveit/moveit_cpp/moveit_cpp.h>
 #include <moveit/moveit_cpp/planning_component.h>
+#include <moveit_visual_tools/moveit_visual_tools.h>
 
 using namespace std::chrono_literals;
 
@@ -95,10 +96,8 @@ int main(int argc, char** argv)
   auto cost_fn = costs::get_collision_cost_function(planning_scene, group, 1.0 /* collision penalty */);
   auto filter_fn = filters::chain(
       { filters::simple_smoothing_matrix(config.num_timesteps), filters::enforce_position_bounds(group) });
-  auto iteration_callback_fn = visualization::get_iteration_path_publisher(
-      markers_publisher, moveit_cpp->getPlanningSceneMonitorNonConst(), group);
-  auto done_callback_fn = visualization::get_success_trajectory_publisher(
-      markers_publisher, moveit_cpp->getPlanningSceneMonitorNonConst(), group);
+  auto iteration_callback_fn = visualization::get_iteration_path_publisher(markers_publisher, planning_scene, group);
+  auto done_callback_fn = visualization::get_success_trajectory_publisher(markers_publisher, planning_scene, group);
   stomp::TaskPtr task =
       std::make_shared<ComposableTask>(noise_generator_fn, cost_fn, filter_fn, iteration_callback_fn, done_callback_fn);
 

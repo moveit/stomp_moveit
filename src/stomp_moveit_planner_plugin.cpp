@@ -25,13 +25,6 @@ public:
     parameter_namespace_ = parameter_namespace;
 
     param_listener_ = std::make_shared<stomp_moveit::ParamListener>(node, parameter_namespace);
-    auto const params = param_listener_->get_params();
-
-    if (!params.path_marker_topic.empty())
-    {
-      path_publisher_ = node->create_publisher<visualization_msgs::msg::MarkerArray>(params.path_marker_topic,
-                                                                                     rclcpp::SystemDefaultsQoS());
-    }
 
     return true;
   }
@@ -56,10 +49,19 @@ public:
       return nullptr;
     }
 
-    PlanningContextPtr planning_context =
-        std::make_shared<StompPlanningContext>("STOMP", req.group_name, param_listener_->get_params());
+    auto const params = param_listener_->get_params();
+
+    std::shared_ptr<StompPlanningContext> planning_context =
+        std::make_shared<StompPlanningContext>("STOMP", req.group_name, params);
     planning_context->setPlanningScene(planning_scene);
     planning_context->setMotionPlanRequest(req);
+
+    if (!params.path_marker_topic.empty())
+    {
+      auto path_publisher = node_->create_publisher<visualization_msgs::msg::MarkerArray>(params.path_marker_topic,
+                                                                                          rclcpp::SystemDefaultsQoS());
+      planning_context->setPathPublisher(path_publisher);
+    }
 
     return planning_context;
   }
@@ -107,7 +109,6 @@ private:
   rclcpp::Node::SharedPtr node_;
   std::string parameter_namespace_;
   std::shared_ptr<stomp_moveit::ParamListener> param_listener_;
-  std::shared_ptr<rclcpp::Publisher<visualization_msgs::msg::MarkerArray>> path_publisher_;
 };
 
 }  // namespace stomp_moveit
