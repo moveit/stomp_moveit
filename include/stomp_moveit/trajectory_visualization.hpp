@@ -103,7 +103,7 @@ get_success_trajectory_publisher(rclcpp::Publisher<visualization_msgs::msg::Mark
 
       const moveit::core::LinkModel* ee_parent_link = group->getOnlyOneEndEffectorTip();
 
-      if (ee_parent_link != nullptr)
+      if (ee_parent_link != nullptr && !trajectory.empty())
       {
         marker_publisher->publish(createTrajectoryMarkerArray(trajectory, ee_parent_link));
       }
