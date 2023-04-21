@@ -84,7 +84,6 @@ get_iteration_path_publisher(rclcpp::Publisher<visualization_msgs::msg::MarkerAr
 
     if (ee_parent_link != nullptr && !trajectory.empty())
     {
-      RCLCPP_INFO(LOGGER, "PUBLISH!!!!!!!!!");
       marker_publisher->publish(createTrajectoryMarkerArray(trajectory, ee_parent_link, GREEN(0.5)));
     }
   };
