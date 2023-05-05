@@ -10,10 +10,30 @@
 
 namespace stomp_moveit
 {
-namespace
-{
 // Decides if the given state position vector is valid or not - example use cases are collision or constraint checking
 using StateValidatorFn = std::function<bool(const Eigen::VectorXd& state_positions)>;
+
+namespace costs
+{
+
+// Interpolation step size for collision checking (joint space, L2 norm)
+constexpr double COL_CHECK_DISTANCE = 0.05;
+constexpr double CONSTRAINT_CHECK_DISTANCE = 0.1;
+
+/**
+ * Creates a cost function from a binary robot state validation function.
+ * This is used for computing smooth cost profiles for binary state conditions like collision checks and constraints.
+ * The validator function is applied for all states in the validated path while also considering interpolated states.
+ * If a waypoint or an interpolated state is invalid, a local penalty is being applied to the path.
+ * Penalty costs are being smoothed out using a Gaussian so that valid neighboring states (near collisions) are
+ * optimized as well.
+ *
+ * @param state_validator_fn      The validator function that tests for binary conditions
+ * @param interpolation_step_size The L2 norm distance step used for interpolation
+ * @param penalty                 The penalty cost value applied to invalid states
+ *
+ * @return                        Cost function that computes smooth costs for binary validity conditions
+ */
 CostFn get_cost_function_from_state_validator(const StateValidatorFn state_validator_fn, double interpolation_step_size,
                                               double penalty)
 {
@@ -91,13 +111,18 @@ CostFn get_cost_function_from_state_validator(const StateValidatorFn state_valid
 
   return cost_fn;
 }
-}  // namespace
-namespace costs
-{
-// Interpolation step size for collision checking (joint space, L2 norm)
-constexpr double COL_CHECK_DISTANCE = 0.05;
-constexpr double CONSTRAINT_CHECK_DISTANCE = 0.1;
 
+/**
+ * Creates a cost function for binary collisions of group states in the planning scene.
+ * This function uses a StateValidatorFn for computing smooth penalty costs from binary
+ * collision checks using get_cost_function_from_state_validator().
+ *
+ * @param planning_scene    The planning scene instance to use for collision checking
+ * @param group             The group to use for computing link transforms from joint positions
+ * @param collision_penalty The penalty cost value applied to colliding states
+ *
+ * @return                  Cost function that computes smooth costs for colliding path segments
+ */
 CostFn get_collision_cost_function(const std::shared_ptr<const planning_scene::PlanningScene>& planning_scene,
                                    const moveit::core::JointModelGroup* group, double collision_penalty)
 {
@@ -117,6 +142,18 @@ CostFn get_collision_cost_function(const std::shared_ptr<const planning_scene::P
   return get_cost_function_from_state_validator(collision_validator_fn, COL_CHECK_DISTANCE, collision_penalty);
 }
 
+/**
+ * Creates a cost function for binary constraint checks applied to group states.
+ * This function uses a StateValidatorFn for computing smooth penalty costs from binary
+ * constraint checks using get_cost_function_from_state_validator().
+ *
+ * @param planning_scene      The planning scene instance to use for computing transforms
+ * @param group               The group to use for computing link transforms from joint positions
+ * @param constraints_msg     The constraints used for validating group states
+ * @param constraints_penalty The penalty cost value applied to invalid states
+ *
+ * @return                    Cost function that computes smooth costs for invalid path segments
+ */
 CostFn get_constraints_cost_function(const std::shared_ptr<const planning_scene::PlanningScene>& planning_scene,
                                      const moveit::core::JointModelGroup* group,
                                      const moveit_msgs::msg::Constraints& constraints_msg, double constraints_penalty)
@@ -143,6 +180,14 @@ CostFn get_constraints_cost_function(const std::shared_ptr<const planning_scene:
   return get_cost_function_from_state_validator(constraints_validator_fn, CONSTRAINT_CHECK_DISTANCE,
                                                 constraints_penalty);
 }
+
+/**
+ * Creates a cost function that computes the summed waypoint penalites over a vector of cost functions.
+ *
+ * @param cost_functions A vector of cost functions
+ *
+ * @return               Cost function that computes the summed costs for each waypoint
+ */
 CostFn sum(const std::vector<CostFn>& cost_functions)
 {
   return [=](const Eigen::MatrixXd& values, Eigen::VectorXd& overall_costs, bool& overall_validity) {
