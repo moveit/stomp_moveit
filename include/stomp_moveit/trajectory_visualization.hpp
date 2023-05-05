@@ -17,7 +17,6 @@ namespace visualization
 
 namespace
 {
-const rclcpp::Logger LOGGER = rclcpp::get_logger("stomp_moveit");
 const auto GREEN = [](const double& a) {
   std_msgs::msg::ColorRGBA color;
   color.r = 0.1;
@@ -117,7 +116,6 @@ get_success_trajectory_publisher(rclcpp::Publisher<visualization_msgs::msg::Mark
 
           if (ee_parent_link != nullptr && !trajectory.empty())
           {
-            RCLCPP_INFO(LOGGER, "PUBLISH!!!!!!!!!");
             marker_publisher->publish(createTrajectoryMarkerArray(trajectory, ee_parent_link));
           }
         }
