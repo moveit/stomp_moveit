@@ -1,6 +1,6 @@
 # stomp_moveit
 
-> Note: This package is WIP and not feature complete! See [Open TODOs](https://github.com/ros-planning/stomp_moveit/issues/1) for more info.
+> Note: Package development is continued in the [MoveIt 2 repository](https://github.com/ros-planning/moveit2).
 
 STOMP Planner plugin for MoveIt ROS 2.
 
